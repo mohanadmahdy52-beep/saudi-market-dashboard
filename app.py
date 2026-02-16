@@ -167,3 +167,4 @@ fig_bar.update_layout(**layout_style)
 fig_bar.update_coloraxes(showscale=False)
 st.plotly_chart(fig_bar, use_container_width=True)
 
+
