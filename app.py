@@ -6,124 +6,106 @@ from pyvis.network import Network
 import streamlit.components.v1 as components
 import networkx as nx
 
-# 1. إعدادات الصفحة (يجب أن تكون أول سطر)
-st.set_page_config(layout="wide", page_title="نبض السوق السعودي", page_icon="🇸🇦")
+# 1. إعدادات الصفحة
+st.set_page_config(layout="wide", page_title="Saudi Market Pulse", page_icon="💎")
 
 # ==========================================
-# 🎨 التصميم الإبداعي المتحرك (CSS Magic)
+# 🎨 التصميم السينمائي الفاخر (Dark Luxury Return)
 # ==========================================
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;700;900&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Tajawal:wght@300;400;700;900&display=swap');
 
-    /* 1. إلغاء المساحات البيضاء العلوية */
-    .block-container {
-        padding-top: 1rem !important;
-        padding-bottom: 1rem !important;
-    }
-    
-    /* 2. الخلفية المتحركة (Aurora Effect) */
+    /* خلفية داكنة فخمة ثابتة */
     .stApp {
-        background: linear-gradient(-45deg, #0f2027, #203a43, #2c5364, #13367);
-        background-size: 400% 400%;
-        animation: gradient 15s ease infinite;
+        background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
         font-family: 'Tajawal', sans-serif;
     }
-    
-    @keyframes gradient {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
-    }
 
-    /* 3. العناوين والنصوص */
-    h1, h2, h3 {
-        color: #fff !important;
+    /* العناوين الذهبية */
+    h1, h2, h3, h4 {
         font-family: 'Tajawal', sans-serif !important;
-        text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        color: #e0c3fc !important;
+        text-shadow: 0px 0px 10px rgba(224, 195, 252, 0.2);
     }
-
-    /* 4. الكروت الزجاجية (Glassmorphism) */
+    
+    /* الكروت الزجاجية */
     .glass-card {
-        background: rgba(255, 255, 255, 0.07);
-        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 15px;
         box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        padding: 15px;
-        margin: 5px;
+        backdrop-filter: blur(7px);
+        -webkit-backdrop-filter: blur(7px);
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        padding: 20px;
         text-align: center;
-        transition: transform 0.3s;
+        transition: transform 0.2s;
     }
     .glass-card:hover {
         transform: translateY(-5px);
-        border: 1px solid #d4af37;
-        background: rgba(255, 255, 255, 0.1);
-    }
-
-    /* 5. تخصيص الفلاتر */
-    section[data-testid="stSidebar"] {
-        background-color: rgba(0, 0, 0, 0.3);
-        backdrop-filter: blur(10px);
+        border-color: #d4af37;
     }
     
-    /* أرقام المؤشرات */
     .big-number {
-        font-size: 2.5rem;
-        font-weight: 900;
-        background: -webkit-linear-gradient(#fff, #d4af37);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+        font-family: 'Playfair Display', serif;
+        font-size: 2.2rem;
+        font-weight: bold;
+        color: #fff;
     }
+    
+    /* القائمة الجانبية */
+    section[data-testid="stSidebar"] {
+        background-color: rgba(15, 32, 39, 0.98);
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    /* إخفاء الهوامش العلوية */
+    .block-container { padding-top: 1rem !important; }
     </style>
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 📥 تحميل ومعالجة البيانات (Fixing Zeros)
+# 📥 تحميل ودمج البيانات (Data Integration)
 # ==========================================
 @st.cache_data
 def load_data():
     try:
-        # قراءة 15,000 صف
-        df = pd.read_excel("Saudi_CSR_MASTER_FILE_Final_Fixed.xlsx", engine='openpyxl', nrows=15000)
+        # 1. تحميل الملف الرئيسي (15,000 صف)
+        df_master = pd.read_excel("Saudi_CSR_MASTER_FILE_Final_Fixed.xlsx", engine='openpyxl', nrows=15000)
         
-        # 🛠️ إصلاح البيانات (Critical Fixes)
-        
-        # 1. تحويل التاريخ
-        if 'Date_Clean' in df.columns:
-            df['Date_Clean'] = pd.to_datetime(df['Date_Clean'], errors='coerce')
-        
-        # 2. التأكد من أن عمود التقييم رقمي (لحل مشكلة الأصفار)
-        # نبحث عن العمود ونحوله لرقم غصباً عنه
+        # 2. تحميل ملف التصنيف (القطاعات)
+        try:
+            df_cats = pd.read_excel("Saudi_CSR_Dataset.xlsx", engine='openpyxl', usecols=['نوع_النشاط', 'القطاع'])
+            # حذف التكرار لإنشاء قاموس (نوع النشاط -> القطاع)
+            sector_map = df_cats.drop_duplicates('نوع_النشاط').set_index('نوع_النشاط')['القطاع'].to_dict()
+            # تطبيق المابينج
+            df_master['Main_Sector'] = df_master['نوع_النشاط'].map(sector_map).fillna('قطاعات أخرى')
+        except:
+            df_master['Main_Sector'] = 'عام' # لو الملف التاني مش موجود
+
+        # 3. معالجة التاريخ والأرقام
+        if 'Date_Clean' in df_master.columns:
+            df_master['Date_Clean'] = pd.to_datetime(df_master['Date_Clean'], errors='coerce')
+
+        # 4. معالجة التقييم (Score & Sentiment)
+        # البحث عن عمود السكور أياً كان اسمه
         score_col = None
-        possible_names = ['Sentiment_Score', 'Score', 'sentiment_score', 'التقييم', 'Sentiment']
-        for col in possible_names:
-            if col in df.columns:
-                # محاولة تحويل العمود لأرقام، وأي نص يتحول لـ NaN
-                if pd.api.types.is_numeric_dtype(df[col]):
-                     score_col = col
-                     break
-                else:
-                    # محاولة التحويل القسري
-                    df[col] = pd.to_numeric(df[col], errors='coerce')
-                    if df[col].notna().sum() > 0: # لو فيه أرقام ظهرت
-                        score_col = col
-                        break
+        for col in ['Sentiment_Score', 'Score', 'score', 'sentiment_score']:
+            if col in df_master.columns:
+                score_col = col
+                break
         
         if score_col:
-            df['Final_Score'] = df[score_col]
-            # تصنيف المشاعر من جديد بناءً على الأرقام
-            df['Sentiment_Label'] = df['Final_Score'].apply(
+            df_master['Final_Score'] = pd.to_numeric(df_master[score_col], errors='coerce').fillna(0)
+            # إعادة حساب المشاعر لضمان الدقة
+            df_master['Sentiment'] = df_master['Final_Score'].apply(
                 lambda x: 'Positive' if x > 0 else ('Negative' if x < 0 else 'Neutral')
             )
         else:
-            # بيانات وهمية لو فشل كل شيء عشان الموقع لا يقع
-            df['Final_Score'] = 0
-            df['Sentiment_Label'] = 'Neutral'
+            df_master['Final_Score'] = 0
+            df_master['Sentiment'] = 'Neutral'
 
-        # 3. رسم خريطة المناطق (Mapping)
-        # بما أن المناطق قد لا تكون موجودة، سنصنعها من المدن
+        # 5. تصنيف المناطق (Mapping from City)
         regions_map = {
             'Riyadh': 'الوسطى', 'الرياض': 'الوسطى',
             'Jeddah': 'الغربية', 'جدة': 'الغربية', 'Mecca': 'الغربية', 'مكة': 'الغربية', 'Medina': 'الغربية', 'المدينة': 'الغربية',
@@ -131,206 +113,175 @@ def load_data():
             'Abha': 'الجنوبية', 'أبها': 'الجنوبية', 'Jazan': 'الجنوبية', 'جازان': 'الجنوبية',
             'Tabuk': 'الشمالية', 'تبوك': 'الشمالية', 'Hail': 'الشمالية', 'حائل': 'الشمالية'
         }
-        if 'المدينة' in df.columns:
-            df['Region'] = df['المدينة'].map(regions_map).fillna('أخرى')
+        if 'المدينة' in df_master.columns:
+            df_master['Region'] = df_master['المدينة'].map(regions_map).fillna('أخرى')
         else:
-            df['Region'] = 'غير محدد'
+            df_master['Region'] = 'غير محدد'
 
-        # 4. التأكد من وجود عمود للمشاكل
-        if 'macro_category' not in df.columns:
-            df['macro_category'] = 'عام'
-
-        return df
+        return df_master
     except Exception as e:
         st.error(f"خطأ في البيانات: {e}")
         return pd.DataFrame()
 
-df = load_data()
+# تنفيذ التحميل
+with st.spinner('جاري دمج البيانات وتحليل العلاقات...'):
+    df = load_data()
 
 if df.empty:
-    st.warning("⚠️ جاري تحميل البيانات... يرجى الانتظار")
     st.stop()
 
 # ==========================================
-# 🔍 القائمة الجانبية (فلاتر متقدمة)
+# 🔍 القائمة الجانبية (الفلاتر)
 # ==========================================
-st.sidebar.image("https://cdn-icons-png.flaticon.com/512/323/323310.png", width=80)
 st.sidebar.markdown("### ⚙️ إعدادات التحليل")
 
-# 1. فلتر المنطقة
+# فلتر المنطقة
 regions = ['الكل'] + sorted(list(df['Region'].unique()))
 sel_region = st.sidebar.selectbox("🗺️ المنطقة", regions)
 
-# 2. فلتر القطاع الرئيسي
-sectors = ['الكل'] + sorted(list(df['نوع_النشاط'].unique()))
-sel_sector = st.sidebar.selectbox("🏢 القطاع", sectors)
+# فلتر القطاع الرئيسي (من الملف الثاني)
+main_sectors = ['الكل'] + sorted(list(df['Main_Sector'].unique()))
+sel_main_sector = st.sidebar.selectbox("🏢 القطاع الرئيسي", main_sectors)
 
-# 3. فلتر نوع المشكلة
-problems = ['الكل'] + sorted(list(df['macro_category'].astype(str).unique()))
-sel_problem = st.sidebar.selectbox("⚠️ نوع المشكلة", problems)
+# فلتر نوع النشاط الفرعي
+sub_sectors = ['الكل'] + sorted(list(df['نوع_النشاط'].unique()))
+sel_sub_sector = st.sidebar.selectbox("🔧 النشاط الفرعي", sub_sectors)
 
-# تطبيق الفلاتر
+# تطبيق الفلترة
 df_filtered = df.copy()
 if sel_region != 'الكل':
     df_filtered = df_filtered[df_filtered['Region'] == sel_region]
-if sel_sector != 'الكل':
-    df_filtered = df_filtered[df_filtered['نوع_النشاط'] == sel_sector]
-if sel_problem != 'الكل':
-    df_filtered = df_filtered[df_filtered['macro_category'] == sel_problem]
+if sel_main_sector != 'الكل':
+    df_filtered = df_filtered[df_filtered['Main_Sector'] == sel_main_sector]
+if sel_sub_sector != 'الكل':
+    df_filtered = df_filtered[df_filtered['نوع_النشاط'] == sel_sub_sector]
 
 # ==========================================
-# 🌟 القسم العلوي: المؤشر العام (Hero Section)
+# 🌟 القسم العلوي: المؤشرات (Hero Section)
 # ==========================================
 
-# حساب المؤشرات
+# حساب الأرقام الحقيقية
 total_rev = len(df_filtered)
-pos_rev = len(df_filtered[df_filtered['Sentiment_Label'] == 'Positive'])
-neg_rev = len(df_filtered[df_filtered['Sentiment_Label'] == 'Negative'])
-# حساب نسبة الرضا (تجنب القسمة على صفر)
-satisfaction_rate = int((pos_rev / total_rev) * 100) if total_rev > 0 else 0
+pos_rev = len(df_filtered[df_filtered['Sentiment'] == 'Positive'])
+neg_rev = len(df_filtered[df_filtered['Sentiment'] == 'Negative'])
+satisfaction = int((pos_rev / total_rev * 100)) if total_rev > 0 else 0
 
-# عنوان ومؤشر ضخم
-col_hero1, col_hero2 = st.columns([2, 1])
-
-with col_hero1:
-    st.markdown(f"""
-    <div>
-        <h1 style='font-size: 3rem; margin-bottom: 0;'>نبض السوق السعودي</h1>
-        <p style='color: #ddd; font-size: 1.2rem; margin-top: 0;'>منصة استشراف المستقبل وتحليل رضا المستفيدين</p>
+st.markdown(f"""
+    <div style='text-align: center; margin-bottom: 30px;'>
+        <h1 style='font-size: 3.5rem; background: -webkit-linear-gradient(#eee, #d4af37); -webkit-background-clip: text; -webkit-text-fill-color: transparent;'>
+            نبض السوق السعودي
+        </h1>
+        <p style='color: #888; font-size: 1.1rem;'>Strategic Market Intelligence Dashboard</p>
     </div>
-    """, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
-with col_hero2:
-    # مؤشر دائري ضخم
-    fig_gauge = go.Figure(go.Indicator(
-        mode = "gauge+number",
-        value = satisfaction_rate,
-        title = {'text': "مؤشر الرضا العام", 'font': {'size': 20, 'color': 'white', 'family': 'Tajawal'}},
-        number = {'suffix': "%", 'font': {'color': '#d4af37'}},
-        gauge = {
-            'axis': {'range': [0, 100], 'tickwidth': 1, 'tickcolor': "white"},
-            'bar': {'color': "#d4af37"},
-            'bgcolor': "rgba(255,255,255,0.1)",
-            'borderwidth': 2,
-            'bordercolor': "white",
-            'steps': [
-                {'range': [0, 50], 'color': 'rgba(255, 0, 0, 0.3)'},
-                {'range': [50, 100], 'color': 'rgba(0, 255, 0, 0.3)'}],
-        }))
-    fig_gauge.update_layout(paper_bgcolor='rgba(0,0,0,0)', margin=dict(t=0, b=0, l=20, r=20), height=150)
-    st.plotly_chart(fig_gauge, use_container_width=True)
+# عرض الكروت
+c1, c2, c3, c4 = st.columns(4)
+def card(label, value, color="#fff"):
+    return f"""
+    <div class="glass-card">
+        <div style="color: #aab6fe; font-size: 0.9rem;">{label}</div>
+        <div class="big-number" style="color: {color}">{value}</div>
+    </div>
+    """
+
+with c1: st.markdown(card("إجمالي البيانات", f"{total_rev:,}"), unsafe_allow_html=True)
+with c2: st.markdown(card("مؤشر الرضا العام", f"{satisfaction}%", "#d4af37"), unsafe_allow_html=True)
+with c3: st.markdown(card("تفاعل إيجابي", f"{pos_rev:,}", "#50b965"), unsafe_allow_html=True)
+with c4: st.markdown(card("تفاعل سلبي", f"{neg_rev:,}", "#ff6b6b"), unsafe_allow_html=True)
 
 # ==========================================
-# 📊 شريط القطاعات (Sector Squares)
+# 📊 مؤشرات القطاعات (Barometer Style)
 # ==========================================
-st.markdown("### 🏢 مؤشرات القطاعات الرئيسية")
+st.markdown("### 🏢 مؤشرات الأداء حسب القطاع الرئيسي")
 
-# نأخذ أكبر 5 قطاعات كعينة
-top_sectors = df['نوع_النشاط'].value_counts().head(5).index
-cols = st.columns(len(top_sectors))
+# تجميع البيانات حسب القطاع الرئيسي
+sector_perf = df_filtered.groupby('Main_Sector')['Final_Score'].mean().sort_values(ascending=False).head(5)
 
-for i, sec in enumerate(top_sectors):
-    sec_data = df[df['نوع_النشاط'] == sec]
-    sec_sat = len(sec_data[sec_data['Sentiment_Label'] == 'Positive']) / len(sec_data) * 100 if len(sec_data) > 0 else 0
-    color = "#50b965" if sec_sat >= 70 else ("#f1c40f" if sec_sat >= 50 else "#e74c3c")
+cols = st.columns(len(sector_perf))
+for i, (sec_name, score) in enumerate(sector_perf.items()):
+    # تحويل السكور (-1 إلى 1) لنسبة (0 إلى 100)
+    pct = int((score + 1) / 2 * 100)
+    color = "#50b965" if pct >= 60 else ("#f1c40f" if pct >= 40 else "#e74c3c")
     
     with cols[i]:
         st.markdown(f"""
         <div class="glass-card">
-            <div style="font-size:0.9rem; color:#ccc;">{sec}</div>
-            <div class="big-number" style="font-size: 1.8rem; -webkit-text-fill-color: {color};">{int(sec_sat)}%</div>
-            <div style="font-size:0.8rem; color:#fff;">نسبة الرضا</div>
+            <div style="font-size:0.8rem; color:#ccc; height:40px;">{sec_name}</div>
+            <div style="font-size: 1.8rem; font-weight:bold; color: {color};">{pct}%</div>
+            <div style="height: 5px; background: #333; border-radius: 5px; margin-top: 5px;">
+                <div style="width: {pct}%; background: {color}; height: 100%; border-radius: 5px;"></div>
+            </div>
         </div>
         """, unsafe_allow_html=True)
 
 # ==========================================
-# 📈 الرسوم البيانية (Charts)
+# 📈 الرسوم والتحليلات
 # ==========================================
 st.markdown("---")
-row1_col1, row1_col2 = st.columns([2, 1])
+chart_config = dict(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color='white', family="Tajawal"))
 
-# 1. رسم المناطق (Bar Chart)
-with row1_col1:
-    st.markdown("### 🌍 مستويات الرضا حسب المنطقة")
-    region_stats = df_filtered.groupby('Region')['Final_Score'].mean().reset_index()
-    # تحويل السكور لنسبة مئوية تقريبية للرسم
-    region_stats['Percentage'] = ((region_stats['Final_Score'] + 1) / 2 * 100).fillna(0) # تقريبي من -1:1 إلى 0:100
-    
-    fig_region = px.bar(region_stats, x='Region', y='Percentage', color='Percentage', 
-                        color_continuous_scale='RdYlGn', text_auto='.1f')
-    fig_region.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', 
-                             font=dict(color='white', family='Tajawal'), margin=dict(t=20, l=0, r=0, b=0))
-    st.plotly_chart(fig_region, use_container_width=True)
+col_main1, col_main2 = st.columns([2, 1])
 
-# 2. تحليل المشاعر (Donut)
-with row1_col2:
+with col_main1:
+    st.markdown("### 📈 المسار الزمني (Trend)")
+    if 'Date_Clean' in df_filtered.columns:
+        trend = df_filtered.groupby(df_filtered['Date_Clean'].dt.to_period('M'))['Final_Score'].mean().reset_index()
+        trend['Date_Clean'] = trend['Date_Clean'].astype(str)
+        fig_trend = px.area(trend, x='Date_Clean', y='Final_Score', color_discrete_sequence=['#d4af37'])
+        fig_trend.update_layout(**chart_config)
+        st.plotly_chart(fig_trend, use_container_width=True)
+
+with col_main2:
     st.markdown("### 🎭 توزيع المشاعر")
-    fig_donut = px.donut(df_filtered, names='Sentiment_Label', 
-                         color='Sentiment_Label',
-                         color_discrete_map={'Positive':'#50b965', 'Negative':'#e74c3c', 'Neutral':'#95a5a6'},
-                         hole=0.6)
-    fig_donut.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-                            font=dict(color='white', family='Tajawal'), showlegend=False,
-                            margin=dict(t=20, l=0, r=0, b=0))
-    
-    # وضع النسبة في النص
-    fig_donut.add_annotation(text=f"{satisfaction_rate}%", showarrow=False, 
-                             font=dict(size=30, color="white", family="Tajawal"))
+    fig_donut = px.donut(df_filtered, names='Sentiment', color='Sentiment', 
+                         color_discrete_map={'Positive':'#50b965', 'Negative':'#ff6b6b', 'Neutral':'#888'}, hole=0.6)
+    fig_donut.update_layout(**chart_config, showlegend=False)
+    fig_donut.add_annotation(text=f"{satisfaction}%", showarrow=False, font=dict(size=25, color="white"))
     st.plotly_chart(fig_donut, use_container_width=True)
 
-# 3. المسار الزمني (Area Chart)
-st.markdown("### 📈 المسار الزمني للرضا (Time Trend)")
-if 'Date_Clean' in df_filtered.columns:
-    trend = df_filtered.groupby(df_filtered['Date_Clean'].dt.to_period('M'))['Final_Score'].mean().reset_index()
-    trend['Date_Clean'] = trend['Date_Clean'].astype(str)
-    
-    fig_trend = px.area(trend, x='Date_Clean', y='Final_Score', markers=True)
-    fig_trend.update_traces(line_color='#d4af37', fillcolor='rgba(212, 175, 55, 0.2)')
-    fig_trend.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-                            font=dict(color='white', family='Tajawal'), 
-                            xaxis=dict(showgrid=False), yaxis=dict(showgrid=True, gridcolor='rgba(255,255,255,0.1)'))
-    st.plotly_chart(fig_trend, use_container_width=True)
-
 # ==========================================
-# 🕸️ التحليل الشبكي (Network Graph)
+# 🕸️ التحليل الشبكي الحقيقي (Real Network Graph)
 # ==========================================
 st.markdown("---")
-st.markdown("### 🕸️ شبكة العلاقات: ما الذي يربط المشاكل بالقطاعات؟")
-st.caption("💡 هذه الشبكة تفاعلية! يمكنك تحريك العناصر وتقريب الصورة.")
+st.markdown("### 🕸️ شبكة ترابط المشاكل (Network Analysis)")
+st.caption("تحليل العلاقات بين القطاعات وبين أنواع الشكاوى (Nodes & Edges)")
 
-# تجهيز البيانات للشبكة (نأخذ عينة من الشكاوى فقط لعدم تعليق المتصفح)
-net_data = df_filtered[df_filtered['Sentiment_Label'] == 'Negative'].head(100) # أول 100 مشكلة سلبية
+# تجهيز بيانات الشبكة: نربط (القطاع) -> (المشكلة)
+# نأخذ عينة من البيانات السلبية فقط
+net_df = df_filtered[df_filtered['Sentiment'] == 'Negative'].head(150)
 
-if not net_data.empty:
+if not net_df.empty and 'macro_category' in net_df.columns:
     G = nx.Graph()
     
-    for i, row in net_data.iterrows():
-        # العقدة 1: القطاع
-        sector_node = row['نوع_النشاط']
-        # العقدة 2: المشكلة
-        problem_node = row['macro_category']
+    # إضافة العقد والروابط
+    for i, row in net_df.iterrows():
+        source = row['نوع_النشاط']
+        target = row['macro_category'] # تأكد أن هذا العمود موجود في الإكسل
         
-        G.add_node(sector_node, label=sector_node, color='#50b965', size=20, title="قطاع")
-        G.add_node(problem_node, label=problem_node, color='#e74c3c', size=15, title="مشكلة")
-        G.add_edge(sector_node, problem_node, color='rgba(255,255,255,0.3)')
+        # عقدة القطاع (أزرق)
+        G.add_node(source, label=source, title=source, color='#13367', size=25, group='sector')
+        # عقدة المشكلة (أحمر)
+        G.add_node(target, label=target, title=target, color='#e74c3c', size=15, group='problem')
+        # الرابط
+        G.add_edge(source, target, color='rgba(255,255,255,0.2)')
 
-    # رسم الشبكة
-    nt = Network(height="500px", width="100%", bgcolor="#222222", font_color="white")
+    # إعدادات الشبكة الفيزيائية
+    nt = Network(height="600px", width="100%", bgcolor="#0f2027", font_color="white")
     nt.from_nx(G)
-    nt.hrepulsion() # تباعد الفيزيائي للعقد
+    nt.force_atlas_2based() # خوارزمية التوزيع (مثل الصورة)
     
     # حفظ وعرض
     try:
-        path = '/tmp'
-        nt.save_graph(f'network.html')
-        HtmlFile = open(f'network.html', 'r', encoding='utf-8')
-        source_code = HtmlFile.read() 
-        components.html(source_code, height=510)
+        nt.save_graph("network.html")
+        with open("network.html", "r", encoding="utf-8") as f:
+            html_string = f.read()
+        components.html(html_string, height=620)
     except:
-        st.warning("⚠️ الشبكة تحتاج بيئة محلية للكتابة، لكن البيانات جاهزة.")
+        st.error("خطأ في إنشاء ملف الشبكة")
 else:
-    st.info("لا توجد بيانات سلبية كافية لرسم شبكة المشاكل في هذا الفلتر.")
+    st.info("لا توجد بيانات كافية لرسم الشبكة، أو عمود 'macro_category' مفقود.")
 
-# تذييل الصفحة
+# تذييل
 st.markdown("---")
-st.markdown("<div style='text-align: center; color: #888;'>Developed with ❤️ for Saudi Vision 2030</div>", unsafe_allow_html=True)
+st.markdown("<div style='text-align: center; color: #666;'>Saudi Market Intelligence © 2026</div>", unsafe_allow_html=True)
