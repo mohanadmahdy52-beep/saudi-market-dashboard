@@ -251,9 +251,9 @@ if not net_df.empty:
     center_count = len(net_df)
     
     # نضع حجم خط كبير جداً هنا (40)
-    G.add_node(center_label, label=f"{center_label}\n({center_count})", shape='dot', size=60,
+    G.add_node(center_label, label=f"{center_label}\n({center_count})", shape='dot', size=100,
                color={'background': '#d4af37', 'border': '#ffffff', 'highlight': {'background': '#f1c40f', 'border': '#fff'}},
-               font={'size': 50, 'color': 'white', 'face': 'Tajawal', 'bold': True, 'vadjust': -5},
+               font={'size': 100, 'color': 'white', 'face': 'Tajawal', 'bold': True, 'vadjust': -5},
                title="المركز")
     
     # --- 2. المستوى الأول (المنشآت) ---
@@ -262,9 +262,9 @@ if not net_df.empty:
         comp_count = len(net_df[net_df['اسم_المنشأة'] == comp])
         
         # حجم خط كبير للمنشآت (35)
-        G.add_node(comp, label=f"{comp}\n({comp_count})", shape='dot', size=35,
+        G.add_node(comp, label=f"{comp}\n({comp_count})", shape='dot', size=80,
                    color={'background': '#3498db', 'border': '#2980b9', 'highlight': {'background': '#5dade2', 'border': '#2980b9'}},
-                   font={'size': 35, 'color': 'white', 'face': 'Tajawal'})
+                   font={'size': 80, 'color': 'white', 'face': 'Tajawal'})
         G.add_edge(center_label, comp, color='rgba(255,255,255,0.4)', width=2)
         
         # --- 3. المستوى الثاني (المشاكل) ---
@@ -273,9 +273,9 @@ if not net_df.empty:
             node_id = f"{comp}_{issue}"
             
             # حجم خط واضح للمشاكل (25)
-            G.add_node(node_id, label=f"{issue}\n({count})", shape='dot', size=15 + count,
+            G.add_node(node_id, label=f"{issue}\n({count})", shape='dot', size=50 + count,
                        color={'background': '#e74c3c', 'border': '#c0392b', 'highlight': {'background': '#ff6b6b', 'border': '#fff'}},
-                       font={'size': 25, 'color': 'white', 'face': 'Tajawal'})
+                       font={'size': 50, 'color': 'white', 'face': 'Tajawal'})
             G.add_edge(comp, node_id, color='rgba(231, 76, 60, 0.4)', width=1)
 
     # إعداد الشبكة
@@ -344,4 +344,5 @@ if not net_df.empty:
         st.error(f"خطأ: {e}")
 else:
     st.info("⚠️ البيانات غير كافية.")
+
 
