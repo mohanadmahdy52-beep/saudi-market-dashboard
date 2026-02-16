@@ -235,11 +235,11 @@ with row2_2:
     st.plotly_chart(fig_m, use_container_width=True)
 # ==========================================
 # ==========================================
-# 3️⃣ القسم الثالث: الشبكة العنكبوتية الاحترافية (Dot Matrix Style)
+# 3️⃣ القسم الثالث: الشبكة العنكبوتية الاحترافية (Fixed Full Width & White Dots)
 # ==========================================
 st.markdown("---")
 st.markdown("### 🕸️ الشبكة المترابطة: تحليل عميق للشكاوى")
-st.caption("توضح الرسمة العلاقات بين القطاع الرئيسي، وأكثر المنشآت تلقياً للشكاوى، وأبرز أنواع المشاكل لكل منشأة. (الخلفية منقطة لتوضيح العمق)")
+st.caption("توضح الرسمة العلاقات بين القطاع الرئيسي، وأكثر المنشآت تلقياً للشكاوى، وأبرز أنواع المشاكل لكل منشأة.")
 
 # 1. تجهيز البيانات
 net_df = df_filtered[df_filtered['Sentiment_Clean'] == 'Negative']
@@ -276,19 +276,19 @@ if not net_df.empty:
                        font={'color': 'white', 'size': 10, 'face': 'Tajawal'})
             G.add_edge(comp_name, node_id, color='rgba(231, 76, 60, 0.4)', width=1)
 
-    # 2. إعداد الشبكة (تجهيز الفيزيائية)
+    # 2. إعداد الشبكة
     nt = Network(height="700px", width="100%", bgcolor="#000000", font_color="white")
     nt.from_nx(G)
     
-    # إعدادات التباعد والحركة
+    # إعدادات التباعد (تم توسيعها لتفرد الرسمة)
     nt.set_options("""
     var options = {
       "physics": {
         "forceAtlas2Based": {
-          "gravitationalConstant": -100,
-          "centralGravity": 0.01,
-          "springLength": 120,
-          "springConstant": 0.09,
+          "gravitationalConstant": -120,
+          "centralGravity": 0.005,
+          "springLength": 200,
+          "springConstant": 0.05,
           "damping": 0.4
         },
         "maxVelocity": 50,
@@ -299,39 +299,44 @@ if not net_df.empty:
     }
     """)
     
-    # 3. الحفظ والحقن (CSS Injection) لعمل الخلفية المنقطة وإزالة الإطار
+    # 3. الحفظ والحقن (CSS Injection)
     try:
-        path = "network_pro.html"
+        path = "network_final.html"
         nt.save_graph(path)
         with open(path, "r", encoding="utf-8") as f:
             html_string = f.read()
         
-        # 🔥 السحر هنا: حقن CSS للخلفية المنقطة وإزالة الهوامش 🔥
+        # 🔥 تعديل CSS لإصلاح الحجم والنقاط البيضاء 🔥
         custom_css = """
         <style>
-            body {
+            html, body {
+                width: 100% !important;
+                height: 100% !important;
                 margin: 0 !important;
                 padding: 0 !important;
                 overflow: hidden !important;
-                background-color: #0b1013 !important; /* لون الخلفية الكحلي */
+                background-color: #0b1013 !important;
                 
-                /* رسم نقاط سوداء خفيفة */
-                background-image: radial-gradient(rgba(0, 0, 0, 0.4) 2px, transparent 2px);
-                background-size: 20px 20px; /* مسافة التقيط */
+                /* رسم نقاط بيضاء شفافة (مثل النجوم) */
+                background-image: radial-gradient(rgba(255, 255, 255, 0.15) 1.5px, transparent 1.5px);
+                background-size: 25px 25px;
             }
             #mynetwork {
-                width: 100%;
-                height: 100%;
+                width: 100% !important;
+                height: 100% !important;
                 border: none !important;
                 outline: none !important;
+                position: absolute;
+                top: 0;
+                left: 0;
             }
         </style>
         """
         
-        # استبدال ودمج الستايل
+        # دمج الستايل بقوة
         html_string = html_string.replace('</head>', f'{custom_css}</head>')
         
-        # عرض الشبكة
+        # عرض الشبكة بارتفاع كامل
         components.html(html_string, height=720, scrolling=False)
         
     except Exception as e:
