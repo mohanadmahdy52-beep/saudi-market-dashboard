@@ -252,9 +252,9 @@ if not net_df.empty:
     
     # تكبير الحجم (size) والخط (font size)
     G.add_node(center_label, label=f"{center_label}\n({center_count})", shape='dot', 
-               size=65, # كان 45
+               size=100, # كان 45
                color={'background': '#d4af37', 'border': '#ffffff', 'highlight': {'background': '#f1c40f', 'border': '#fff'}},
-               font={'size': 40, 'color': 'white', 'face': 'Tajawal', 'bold': True}, # كان 20
+               font={'size': 75, 'color': 'white', 'face': 'Tajawal', 'bold': True}, # كان 20
                title="المركز")
     
     # --- 2. المستوى الأول (المنشآت) ---
@@ -264,9 +264,9 @@ if not net_df.empty:
         
         # تكبير الحجم والخط
         G.add_node(comp, label=f"{comp}\n({comp_count})", shape='dot', 
-                   size=40, # كان 25
+                   size=75, # كان 25
                    color={'background': '#3498db', 'border': '#2980b9', 'highlight': {'background': '#5dade2', 'border': '#2980b9'}},
-                   font={'size': 35, 'color': 'white', 'face': 'Tajawal'}) # كان 14
+                   font={'size': 70, 'color': 'white', 'face': 'Tajawal'}) # كان 14
         G.add_edge(center_label, comp, color='rgba(255,255,255,0.5)', width=3) # تعريض الخط الرابط
         
         # --- 3. المستوى الثاني (المشاكل) ---
@@ -276,9 +276,9 @@ if not net_df.empty:
             
             # تكبير الحجم والخط
             G.add_node(node_id, label=f"{issue}\n({count})", shape='dot', 
-                       size=20 + (count * 1.5), # المعادلة كبرت (كانت 10 + count)
+                       size=55 + (count * 1.5), # المعادلة كبرت (كانت 10 + count)
                        color={'background': '#e74c3c', 'border': '#c0392b', 'highlight': {'background': '#ff6b6b', 'border': '#fff'}},
-                       font={'size': 30, 'color': 'white', 'face': 'Tajawal'}) # كان 10
+                       font={'size': 65, 'color': 'white', 'face': 'Tajawal'}) # كان 10
             G.add_edge(comp, node_id, color='rgba(231, 76, 60, 0.5)', width=2)
 
     # إعداد الشبكة
@@ -316,4 +316,5 @@ if not net_df.empty:
         st.error(f"خطأ: {e}")
 else:
     st.info("⚠️ البيانات غير كافية.")
+
 
