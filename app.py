@@ -235,11 +235,11 @@ with row2_2:
     st.plotly_chart(fig_m, use_container_width=True)
 # ==========================================
 # ==========================================
-# 3️⃣ القسم الثالث: الشبكة العنكبوتية (Big Nodes & Fonts)
+# 3️⃣ القسم الثالث: الشبكة العنكبوتية (Fixed Font Scaling)
 # ==========================================
 st.markdown("---")
 st.markdown("### 🕸️ الشبكة المترابطة: تحليل عميق للشكاوى")
-st.caption("تحليل يربط بين القطاع والمنشآت والمشاكل.")
+st.caption("تحليل يربط بين القطاع والمنشآت والمشاكل. (البيانات السلبية فقط)")
 
 net_df = df_filtered[df_filtered['Sentiment_Clean'] == 'Negative']
 
@@ -250,11 +250,10 @@ if not net_df.empty:
     center_label = net_df['نوع_النشاط'].mode()[0] if not net_df.empty else "القطاع"
     center_count = len(net_df)
     
-    # تكبير الحجم (size) والخط (font size)
-    G.add_node(center_label, label=f"{center_label}\n({center_count})", shape='dot', 
-               size=100, # كان 45
+    # نضع حجم خط كبير جداً هنا (40)
+    G.add_node(center_label, label=f"{center_label}\n({center_count})", shape='dot', size=60,
                color={'background': '#d4af37', 'border': '#ffffff', 'highlight': {'background': '#f1c40f', 'border': '#fff'}},
-               font={'size': 175, 'color': 'white', 'face': 'Tajawal', 'bold': True}, # كان 20
+               font={'size': 50, 'color': 'white', 'face': 'Tajawal', 'bold': True, 'vadjust': -5},
                title="المركز")
     
     # --- 2. المستوى الأول (المنشآت) ---
@@ -262,35 +261,64 @@ if not net_df.empty:
     for comp in top_companies:
         comp_count = len(net_df[net_df['اسم_المنشأة'] == comp])
         
-        # تكبير الحجم والخط
-        G.add_node(comp, label=f"{comp}\n({comp_count})", shape='dot', 
-                   size=75, # كان 25
+        # حجم خط كبير للمنشآت (35)
+        G.add_node(comp, label=f"{comp}\n({comp_count})", shape='dot', size=35,
                    color={'background': '#3498db', 'border': '#2980b9', 'highlight': {'background': '#5dade2', 'border': '#2980b9'}},
-                   font={'size': 170, 'color': 'white', 'face': 'Tajawal'}) # كان 14
-        G.add_edge(center_label, comp, color='rgba(255,255,255,0.5)', width=3) # تعريض الخط الرابط
+                   font={'size': 35, 'color': 'white', 'face': 'Tajawal'})
+        G.add_edge(center_label, comp, color='rgba(255,255,255,0.4)', width=2)
         
         # --- 3. المستوى الثاني (المشاكل) ---
         comp_issues = net_df[net_df['اسم_المنشأة'] == comp]['macro_category'].value_counts().head(5)
         for issue, count in comp_issues.items():
             node_id = f"{comp}_{issue}"
             
-            # تكبير الحجم والخط
-            G.add_node(node_id, label=f"{issue}\n({count})", shape='dot', 
-                       size=55 + (count * 1.5), # المعادلة كبرت (كانت 10 + count)
+            # حجم خط واضح للمشاكل (25)
+            G.add_node(node_id, label=f"{issue}\n({count})", shape='dot', size=15 + count,
                        color={'background': '#e74c3c', 'border': '#c0392b', 'highlight': {'background': '#ff6b6b', 'border': '#fff'}},
-                       font={'size': 165, 'color': 'white', 'face': 'Tajawal'}) # كان 10
-            G.add_edge(comp, node_id, color='rgba(231, 76, 60, 0.5)', width=2)
+                       font={'size': 25, 'color': 'white', 'face': 'Tajawal'})
+            G.add_edge(comp, node_id, color='rgba(231, 76, 60, 0.4)', width=1)
 
     # إعداد الشبكة
     nt = Network(height="750px", width="100%", bgcolor="#0b1013", font_color="white")
     nt.from_nx(G)
     
-    # تعديل الفيزياء لتناسب الأحجام الكبيرة (زيادة التباعد)
-    nt.force_atlas_2based(gravity=-150, central_gravity=0.01, spring_length=200, spring_strength=0.08, damping=0.4, overlap=1)
+    # 🔥🔥🔥 التعديل السحري هنا 🔥🔥🔥
+    # هذا الكود يجبر الشبكة على عدم تصغير الخطوط ويضع حداً أدنى للحجم
+    nt.set_options("""
+    var options = {
+      "nodes": {
+        "font": {
+          "multi": "html",
+          "bold": { "color": "white", "size": 30, "face": "Tajawal" }
+        },
+        "scaling": {
+          "label": {
+            "enabled": true,
+            "min": 20, 
+            "max": 60 
+          }
+        }
+      },
+      "physics": {
+        "forceAtlas2Based": {
+          "gravitationalConstant": -100,
+          "centralGravity": 0.01,
+          "springLength": 200,
+          "springConstant": 0.08,
+          "damping": 0.4,
+          "avoidOverlap": 0.5
+        },
+        "maxVelocity": 50,
+        "minVelocity": 0.1,
+        "solver": "forceAtlas2Based"
+      },
+      "interaction": { "hover": true, "zoomView": true }
+    }
+    """)
 
-    # الحفظ والحقن (CSS)
+    # الحفظ والحقن
     try:
-        path = "network_big.html"
+        path = "network_font_fix.html"
         nt.save_graph(path)
         with open(path, "r", encoding="utf-8") as f:
             html_string = f.read()
@@ -316,6 +344,4 @@ if not net_df.empty:
         st.error(f"خطأ: {e}")
 else:
     st.info("⚠️ البيانات غير كافية.")
-
-
 
