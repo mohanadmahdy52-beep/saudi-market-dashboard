@@ -294,8 +294,8 @@ if not net_df.empty:
         "scaling": {
           "label": {
             "enabled": true,
-            "min": 40, 
-            "max": 100 
+            "min": 60, 
+            "max": 120 
           }
         }
       },
@@ -344,6 +344,7 @@ if not net_df.empty:
         st.error(f"خطأ: {e}")
 else:
     st.info("⚠️ البيانات غير كافية.")
+
 
 
 
