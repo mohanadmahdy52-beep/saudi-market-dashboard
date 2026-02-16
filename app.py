@@ -234,66 +234,62 @@ with row2_2:
     fig_m.update_traces(textposition='inside', textinfo='percent+label', marker=dict(line=dict(color='#ffffff', width=1)))
     st.plotly_chart(fig_m, use_container_width=True)
 # ==========================================
-# 3️⃣ القسم الثالث: الشبكة العنكبوتية الاحترافية (Dark Theme Network)
+# ==========================================
+# 3️⃣ القسم الثالث: الشبكة العنكبوتية الاحترافية (Dot Matrix Style)
 # ==========================================
 st.markdown("---")
 st.markdown("### 🕸️ الشبكة المترابطة: تحليل عميق للشكاوى")
-st.caption("توضح الرسمة العلاقات بين القطاع الرئيسي، وأكثر المنشآت تلقياً للشكاوى، وأبرز أنواع المشاكل لكل منشأة مع أعدادها. (يمكنك التقريب والتحريك)")
+st.caption("توضح الرسمة العلاقات بين القطاع الرئيسي، وأكثر المنشآت تلقياً للشكاوى، وأبرز أنواع المشاكل لكل منشأة. (الخلفية منقطة لتوضيح العمق)")
 
-# 1. تجهيز البيانات: نأخذ الشكاوى السلبية فقط
+# 1. تجهيز البيانات
 net_df = df_filtered[df_filtered['Sentiment_Clean'] == 'Negative']
 
 if not net_df.empty:
     G = nx.Graph()
     
-    # --- العقدة المركزية: القطاع (النشاط) ---
-    # نأخذ النشاط الأكثر تكراراً في البيانات المفلترة كمركز
+    # --- العقدة المركزية: القطاع ---
     center_label = net_df['نوع_النشاط'].mode()[0] if not net_df.empty else "القطاع"
     center_count = len(net_df)
-    # تصميم ذهبي كبير ومميز
-    G.add_node(center_label, label=f"{center_label}\n({center_count})", shape='dot', size=50,
-               color={'background': '#d4af37', 'border': '#ffffff', 'highlight': {'background': '#f1c40f', 'border': '#fff'}},
-               font={'size': 22, 'color': 'white', 'face': 'Tajawal', 'bold': True}, title="المركز: القطاع الرئيسي")
     
-    # --- المستوى الأول: أهم المنشآت (Top Companies) ---
-    # نأخذ أعلى 10 منشآت لديها شكاوى
+    # المركز: لون ذهبي لامع
+    G.add_node(center_label, label=f"{center_label}\n({center_count})", shape='dot', size=45,
+               color={'background': '#d4af37', 'border': '#ffffff', 'highlight': {'background': '#f1c40f', 'border': '#fff'}},
+               font={'size': 20, 'color': 'white', 'face': 'Tajawal', 'bold': True}, title="المركز")
+    
+    # --- المستوى الأول: المنشآت ---
     top_companies_series = net_df['اسم_المنشأة'].value_counts().head(10)
     
     for comp_name, comp_count in top_companies_series.items():
-        # تصميم أزرق احترافي للمنشآت
-        G.add_node(comp_name, label=f"{comp_name}\n({comp_count})", shape='dot', size=30,
+        # المنشآت: لون أزرق
+        G.add_node(comp_name, label=f"{comp_name}\n({comp_count})", shape='dot', size=25,
                    color={'background': '#3498db', 'border': '#2980b9', 'highlight': {'background': '#5dade2', 'border': '#2980b9'}},
-                   font={'color': 'white', 'size': 14, 'face': 'Tajawal'}, title=f"منشأة: {comp_name} (إجمالي الشكاوى: {comp_count})")
-        # ربط المنشأة بالمركز (خط رمادي فاتح)
-        G.add_edge(center_label, comp_name, color='#bdc3c7', width=2)
+                   font={'color': 'white', 'size': 14, 'face': 'Tajawal'})
+        G.add_edge(center_label, comp_name, color='rgba(255,255,255,0.3)', width=2)
         
-        # --- المستوى الثاني: أهم مشاكل هذه المنشأة (Top Issues) ---
-        # نأخذ أعلى 5 مشاكل لكل منشأة
+        # --- المستوى الثاني: المشاكل ---
         comp_issues = net_df[net_df['اسم_المنشأة'] == comp_name]['macro_category'].value_counts().head(5)
         for issue_name, issue_count in comp_issues.items():
-            node_id = f"{comp_name}_{issue_name}" # معرف فريد للعقدة
-            # تصميم أحمر/برتقالي للمشاكل، حجمها يعتمد على التكرار
+            node_id = f"{comp_name}_{issue_name}"
+            # المشاكل: لون أحمر
             G.add_node(node_id, label=f"{issue_name}\n({issue_count})", shape='dot', size=10 + issue_count,
                        color={'background': '#e74c3c', 'border': '#c0392b', 'highlight': {'background': '#ff6b6b', 'border': '#fff'}},
-                       font={'color': 'white', 'size': 11, 'face': 'Tajawal'}, title=f"مشكلة: {issue_name} (تكرار: {issue_count})")
-            # ربط المشكلة بالمنشأة (خط أحمر شفاف)
-            G.add_edge(comp_name, node_id, color='rgba(231, 76, 60, 0.5)', width=1)
+                       font={'color': 'white', 'size': 10, 'face': 'Tajawal'})
+            G.add_edge(comp_name, node_id, color='rgba(231, 76, 60, 0.4)', width=1)
 
-    # 2. إعداد الشبكة (تحديد الخلفية الداكنة والخطوط البيضاء)
-    nt = Network(height="700px", width="100%", bgcolor="#0b1013", font_color="white")
+    # 2. إعداد الشبكة (تجهيز الفيزيائية)
+    nt = Network(height="700px", width="100%", bgcolor="#000000", font_color="white")
     nt.from_nx(G)
     
-    # 3. ضبط الفيزياء (للحصول على توزيع متباعد وجميل مثل الصورة)
+    # إعدادات التباعد والحركة
     nt.set_options("""
     var options = {
       "physics": {
         "forceAtlas2Based": {
-          "gravitationalConstant": -80,
+          "gravitationalConstant": -100,
           "centralGravity": 0.01,
-          "springLength": 150,
-          "springConstant": 0.08,
-          "damping": 0.4,
-          "avoidOverlap": 1
+          "springLength": 120,
+          "springConstant": 0.09,
+          "damping": 0.4
         },
         "maxVelocity": 50,
         "minVelocity": 0.1,
@@ -303,20 +299,42 @@ if not net_df.empty:
     }
     """)
     
-    # 4. الحفظ والعرض (بدون هوامش)
+    # 3. الحفظ والحقن (CSS Injection) لعمل الخلفية المنقطة وإزالة الإطار
     try:
         path = "network_pro.html"
         nt.save_graph(path)
         with open(path, "r", encoding="utf-8") as f:
             html_string = f.read()
         
-        # إزالة هوامش صفحة الويب الداخلية
-        html_string = html_string.replace('<body>', '<body style="margin:0; padding:0; overflow:hidden;">')
+        # 🔥 السحر هنا: حقن CSS للخلفية المنقطة وإزالة الهوامش 🔥
+        custom_css = """
+        <style>
+            body {
+                margin: 0 !important;
+                padding: 0 !important;
+                overflow: hidden !important;
+                background-color: #0b1013 !important; /* لون الخلفية الكحلي */
+                
+                /* رسم نقاط سوداء خفيفة */
+                background-image: radial-gradient(rgba(0, 0, 0, 0.4) 2px, transparent 2px);
+                background-size: 20px 20px; /* مسافة التقيط */
+            }
+            #mynetwork {
+                width: 100%;
+                height: 100%;
+                border: none !important;
+                outline: none !important;
+            }
+        </style>
+        """
+        
+        # استبدال ودمج الستايل
+        html_string = html_string.replace('</head>', f'{custom_css}</head>')
         
         # عرض الشبكة
         components.html(html_string, height=720, scrolling=False)
         
     except Exception as e:
-        st.error(f"حدث خطأ تقني أثناء رسم الشبكة: {e}")
+        st.error(f"حدث خطأ: {e}")
 else:
-    st.info("⚠️ لا توجد بيانات شكاوى سلبية كافية في الفلتر الحالي لرسم الشبكة التفصيلية.")
+    st.info("⚠️ لا توجد بيانات كافية.")
