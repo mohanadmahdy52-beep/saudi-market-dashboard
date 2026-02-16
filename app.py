@@ -235,99 +235,84 @@ with row2_2:
     st.plotly_chart(fig_m, use_container_width=True)
 # ==========================================
 # ==========================================
-# 3️⃣ القسم الثالث: الشبكة العنكبوتية (Fixed Layout & Visibility)
+# 3️⃣ القسم الثالث: الشبكة العنكبوتية (Big Nodes & Fonts)
 # ==========================================
 st.markdown("---")
 st.markdown("### 🕸️ الشبكة المترابطة: تحليل عميق للشكاوى")
-st.caption("تحليل يربط بين القطاع والمنشآت والمشاكل. (حرك الماوس للتقريب والتبعيد)")
+st.caption("تحليل يربط بين القطاع والمنشآت والمشاكل.")
 
-# 1. تجهيز البيانات
 net_df = df_filtered[df_filtered['Sentiment_Clean'] == 'Negative']
 
 if not net_df.empty:
     G = nx.Graph()
     
-    # --- العقدة المركزية ---
+    # --- 1. المركز (القطاع) ---
     center_label = net_df['نوع_النشاط'].mode()[0] if not net_df.empty else "القطاع"
     center_count = len(net_df)
     
-    G.add_node(center_label, label=f"{center_label}\n({center_count})", shape='dot', size=45,
+    # تكبير الحجم (size) والخط (font size)
+    G.add_node(center_label, label=f"{center_label}\n({center_count})", shape='dot', 
+               size=65, # كان 45
                color={'background': '#d4af37', 'border': '#ffffff', 'highlight': {'background': '#f1c40f', 'border': '#fff'}},
-               font={'size': 20, 'color': 'white', 'face': 'Tajawal', 'bold': True}, title="المركز")
+               font={'size': 28, 'color': 'white', 'face': 'Tajawal', 'bold': True}, # كان 20
+               title="المركز")
     
-    # --- المستوى الأول: المنشآت ---
+    # --- 2. المستوى الأول (المنشآت) ---
     top_companies = net_df['اسم_المنشأة'].value_counts().head(10).index
     for comp in top_companies:
         comp_count = len(net_df[net_df['اسم_المنشأة'] == comp])
-        G.add_node(comp, label=f"{comp}\n({comp_count})", shape='dot', size=25,
-                   color={'background': '#3498db', 'border': '#2980b9', 'highlight': {'background': '#5dade2', 'border': '#2980b9'}},
-                   font={'color': 'white', 'size': 14, 'face': 'Tajawal'})
-        G.add_edge(center_label, comp, color='rgba(255,255,255,0.5)', width=2)
         
-        # --- المستوى الثاني: المشاكل ---
+        # تكبير الحجم والخط
+        G.add_node(comp, label=f"{comp}\n({comp_count})", shape='dot', 
+                   size=40, # كان 25
+                   color={'background': '#3498db', 'border': '#2980b9', 'highlight': {'background': '#5dade2', 'border': '#2980b9'}},
+                   font={'size': 20, 'color': 'white', 'face': 'Tajawal'}) # كان 14
+        G.add_edge(center_label, comp, color='rgba(255,255,255,0.5)', width=3) # تعريض الخط الرابط
+        
+        # --- 3. المستوى الثاني (المشاكل) ---
         comp_issues = net_df[net_df['اسم_المنشأة'] == comp]['macro_category'].value_counts().head(5)
         for issue, count in comp_issues.items():
             node_id = f"{comp}_{issue}"
-            G.add_node(node_id, label=f"{issue}\n({count})", shape='dot', size=10 + count,
+            
+            # تكبير الحجم والخط
+            G.add_node(node_id, label=f"{issue}\n({count})", shape='dot', 
+                       size=20 + (count * 1.5), # المعادلة كبرت (كانت 10 + count)
                        color={'background': '#e74c3c', 'border': '#c0392b', 'highlight': {'background': '#ff6b6b', 'border': '#fff'}},
-                       font={'color': 'white', 'size': 10, 'face': 'Tajawal'})
-            G.add_edge(comp, node_id, color='rgba(231, 76, 60, 0.5)', width=1)
+                       font={'size': 16, 'color': 'white', 'face': 'Tajawal'}) # كان 10
+            G.add_edge(comp, node_id, color='rgba(231, 76, 60, 0.5)', width=2)
 
-    # 2. إعداد الشبكة (bgcolor هنا لا يهم لأننا سنلغيه بالـ CSS)
-    nt = Network(height="650px", width="100%", bgcolor="#0b1013", font_color="white")
+    # إعداد الشبكة
+    nt = Network(height="750px", width="100%", bgcolor="#0b1013", font_color="white")
     nt.from_nx(G)
     
-    # فيزياء الشبكة (مهمة جداً لظهور الرسمة مفرودة)
-    nt.force_atlas_2based(gravity=-100, central_gravity=0.01, spring_length=150, spring_strength=0.08, damping=0.4, overlap=0)
+    # تعديل الفيزياء لتناسب الأحجام الكبيرة (زيادة التباعد)
+    nt.force_atlas_2based(gravity=-150, central_gravity=0.01, spring_length=250, spring_strength=0.08, damping=0.4, overlap=1)
 
-    # 3. الحفظ والحقن (CSS Injection Repair)
+    # الحفظ والحقن (CSS)
     try:
-        path = "network_fixed.html"
+        path = "network_big.html"
         nt.save_graph(path)
         with open(path, "r", encoding="utf-8") as f:
             html_string = f.read()
         
-        # 🔥 كود الإصلاح: نجعل الخلفية شفافة للرسمة، ونضع الرسمة فوق النقاط 🔥
         custom_css = """
         <style>
-            /* 1. ضبط جسم الصفحة والخلفية المنقطة */
             body {
                 background-color: #0b1013 !important;
                 background-image: radial-gradient(rgba(255, 255, 255, 0.2) 2px, transparent 2px) !important;
                 background-size: 30px 30px !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                overflow: hidden !important;
-                width: 100vw !important;
-                height: 100vh !important;
+                margin: 0 !important; overflow: hidden !important; width: 100vw !important; height: 100vh !important;
             }
-            
-            /* 2. إجبار حاوية الشبكة على الشفافية والظهور */
             #mynetwork {
-                width: 100% !important;
-                height: 100vh !important; /* ملء الشاشة بالطول */
-                background-color: transparent !important; /* شفاف عشان النقاط تبان وراه */
-                position: absolute !important;
-                top: 0;
-                left: 0;
-                z-index: 999; /* ضمان ظهورها فوق الخلفية */
-                outline: none !important;
-                border: none !important;
-            }
-            
-            /* إزالة أي إطارات للإكسل */
-            .vis-network {
-                outline: none !important;
+                width: 100% !important; height: 100vh !important; background-color: transparent !important;
+                position: absolute !important; top: 0; left: 0; z-index: 999; outline: none !important; border: none !important;
             }
         </style>
         """
-        
         html_string = html_string.replace('</head>', f'{custom_css}</head>')
-        
-        # عرض مع ارتفاع ثابت لضمان عدم الاختفاء
-        components.html(html_string, height=660, scrolling=False)
+        components.html(html_string, height=760, scrolling=False)
         
     except Exception as e:
         st.error(f"خطأ: {e}")
 else:
-    st.info("⚠️ البيانات غير كافية لرسم الشبكة.")
+    st.info("⚠️ البيانات غير كافية.")
