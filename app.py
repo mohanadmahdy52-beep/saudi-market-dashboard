@@ -205,8 +205,8 @@ for i, (sec_name, score) in enumerate(display_sectors.items()):
 st.markdown("---")
 st.markdown("### 🔍 تحليل الأسباب الجذرية (Root Cause Analysis)")
 
-# إعدادات الألوان الموحدة (ذهبي وأخضر وأحمر)
-custom_colors = ['#d4af37', '#50b965', '#e74c3c', '#f1c40f', '#3498db', '#9b59b6']
+# إعدادات الألوان الموحدة (ذهبي لامع، أخضر زمردي، وألوان متدرجة)
+shiny_palette = ['#d4af37', '#50b965', '#2ecc71', '#f1c40f', '#e67e22', '#16a085']
 chart_config = dict(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color='white', family='Tajawal'))
 
 # جعل الرسوم بعرض الصفحة
@@ -216,19 +216,23 @@ with row2_1:
     pillar_counts = df_filtered['strategic_pillar'].value_counts().head(6)
     fig_p = px.bar(pillar_counts, x=pillar_counts.values, y=pillar_counts.index, orientation='h',
                    title="المحاور الاستراتيجية للشكاوى",
-                   color_discrete_sequence=['#d4af37']) # توحيد اللون (ذهبي)
+                   # تعديل اللون إلى الذهبي الأساسي
+                   color_discrete_sequence=['#d4af37'])
     fig_p.update_layout(**chart_config)
+    # إضافة تأثير لمعان على البارات (حدود فاتحة وشفافية)
+    fig_p.update_traces(marker_line_color='rgba(255,255,255,0.4)', marker_line_width=1, opacity=0.9)
     st.plotly_chart(fig_p, use_container_width=True)
 
 with row2_2:
     # نأخذ الشكاوى السلبية فقط
     neg_issues = df_filtered[df_filtered['Sentiment_Clean'] == 'Negative']['macro_category'].value_counts().head(7)
     fig_m = px.pie(values=neg_issues.values, names=neg_issues.index, title="أدق التفاصيل (Deep Dive)",
-                   color_discrete_sequence=custom_colors, hole=0.4) # نفس باليت الألوان
+                   # استخدام الباليت الذهبية والخضراء الجديدة
+                   color_discrete_sequence=shiny_palette, hole=0.4)
     fig_m.update_layout(**chart_config)
-    fig_m.update_traces(textposition='inside', textinfo='percent+label')
+    # إضافة حدود بيضاء رفيعة لإعطاء إحساس زجاجي
+    fig_m.update_traces(textposition='inside', textinfo='percent+label', marker=dict(line=dict(color='#ffffff', width=1)))
     st.plotly_chart(fig_m, use_container_width=True)
-
 # ==========================================
 # 3️⃣ القسم الثالث: الشبكة العنكبوتية المتقدمة (Multi-level)
 # ==========================================
@@ -237,7 +241,6 @@ st.markdown("### 🕸️ الشبكة المترابطة: (القطاع -> ال�
 st.caption("تحليل عميق يربط بين نوع النشاط، وأهم المنشآت فيه، وأسباب الشكاوى الخاصة بكل منشأة.")
 
 # تجهيز البيانات للشبكة (3 مستويات)
-# نأخذ عينة من البيانات السلبية
 net_df = df_filtered[df_filtered['Sentiment_Clean'] == 'Negative'].head(200)
 
 if not net_df.empty:
@@ -245,43 +248,45 @@ if not net_df.empty:
     
     # المركز: النشاط الفرعي (القطاع)
     center_node = net_df['نوع_النشاط'].mode()[0] if not net_df.empty else "القطاع"
-    G.add_node(center_node, label=center_node, color='#d4af37', size=35, title="النشاط الرئيسي") # ذهبي
+    # تعديل: لون ذهبي لامع مع حدود بيضاء، وخط أبيض واضح
+    G.add_node(center_node, label=center_node, color={'background':'#d4af37', 'border':'#ffffff'}, size=40, title="النشاط الرئيسي", font={'color': 'white', 'size': 20, 'face': 'Tajawal', 'bold': True})
     
-    # المستوى 1: المنشآت (Top 10 companies in this sector)
+    # المستوى 1: المنشآت (Top 10 companies)
     top_companies = net_df['اسم_المنشأة'].value_counts().head(10).index
     
     for comp in top_companies:
-        # إضافة عقدة المنشأة
-        G.add_node(comp, label=comp, color='#13367', size=25, title="منشأة") # أزرق غامق
-        G.add_edge(center_node, comp, color='rgba(255,255,255,0.3)', width=2)
+        # تعديل: لون أخضر زمردي لامع مع حدود ذهبية
+        G.add_node(comp, label=comp, color={'background':'#50b965', 'border':'#d4af37'}, size=25, title="منشأة", font={'color': 'white', 'face': 'Tajawal'})
+        # رابط ذهبي
+        G.add_edge(center_node, comp, color='#d4af37', width=2)
         
         # المستوى 2: مشاكل هذه المنشأة
         comp_issues = net_df[net_df['اسم_المنشأة'] == comp]['macro_category'].value_counts().head(3)
         for issue, count in comp_issues.items():
-            # إضافة عقدة المشكلة (حجمها حسب التكرار)
-            G.add_node(f"{comp}_{issue}", label=issue, color='#e74c3c', size=10 + (count*2), title=f"تكرار: {count}") # أحمر
-            G.add_edge(comp, f"{comp}_{issue}", color='rgba(231, 76, 60, 0.4)')
+            # تعديل: لون ذهبي داكن أو برتقالي للمشاكل مع حدود ذهبية
+            G.add_node(f"{comp}_{issue}", label=issue, color={'background':'#e67e22', 'border':'#d4af37'}, size=10 + (count*2), title=f"تكرار: {count}", font={'color': 'white', 'face': 'Tajawal'})
+            G.add_edge(comp, f"{comp}_{issue}", color='rgba(230, 126, 34, 0.4)')
 
-    # رسم الشبكة
-    nt = Network(height="600px", width="100%", bgcolor="#00000000", font_color="white") # خلفية شفافة
+    # رسم الشبكة (مع طلب خلفية شفافة)
+    nt = Network(height="600px", width="100%", bgcolor="#00000000", font_color="white")
     nt.from_nx(G)
     
-    # فيزياء الشبكة (توزيع مريح للعين)
+    # فيزياء الشبكة
     nt.force_atlas_2based(gravity=-80, central_gravity=0.01, spring_length=100, spring_strength=0.08, damping=0.4, overlap=0)
     
-    # الحفظ والعرض (بدون حدود)
+    # الحفظ والعرض (الحل السحري للخلفية البيضاء)
     try:
         nt.save_graph("network.html")
         with open("network.html", "r", encoding="utf-8") as f:
             html_string = f.read()
-        # تعديل الستايل داخل HTML لإزالة الهوامش
-        html_string = html_string.replace('<body>', '<body style="margin:0; padding:0; overflow:hidden;">')
+        
+        # 🛠️ حقن CSS لإجبار الخلفية على الشفافية داخل الـ iframe
+        html_string = html_string.replace('<body>', '<body style="background-color: transparent !important; margin:0; padding:0; overflow:hidden;">')
+        # إضافة ستايل للكانفاس نفسه
+        html_string = html_string.replace('</head>', '<style> #mynetwork { background-color: transparent !important; } </style> </head>')
+
         components.html(html_string, height=620, scrolling=False)
     except:
         st.error("خطأ في بناء الشبكة")
 else:
     st.info("البيانات غير كافية لرسم الشبكة المتداخلة لهذا الفلتر.")
-
-# تذييل
-st.markdown("---")
-st.markdown("<div style='text-align: center; color: #555;'>Saudi Market Intelligence © 2026 | Powered by GenAI</div>", unsafe_allow_html=True)
