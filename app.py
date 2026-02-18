@@ -73,43 +73,69 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 📥 تحميل البيانات
+# ==========================================
+# 📥 تحميل البيانات (النسخة الكاملة + توفير الذاكرة)
 # ==========================================
 @st.cache_data
 def load_data():
     try:
-        df = pd.read_excel("Saudi_CSR_MASTER_FILE_Final_Fixed.xlsx", engine='openpyxl', nrows=15000)
+        # 1. قراءة الملف بالكامل (حذفنا nrows=15000)
+        df = pd.read_excel("Saudi_CSR_MASTER_FILE_Final_Fixed.xlsx", engine='openpyxl')
         
-        # تنظيف المشاعر
+        # -------------------------------------------------------
+        # 🔥 الجزء الناقص: ضغط الذاكرة (Memory Optimization) 🔥
+        # هذا هو السر لقراءة 150 ألف صف بدون تهنيج
+        for col in df.select_dtypes(include=['object']).columns:
+            num_unique_values = len(df[col].unique())
+            num_total_values = len(df[col])
+            # لو التكرار كتير، حوله لـ Category
+            if num_unique_values / num_total_values < 0.5:
+                df[col] = df[col].astype('category')
+        # -------------------------------------------------------
+
+        # 2. تنظيف المشاعر (كودك الأصلي كما هو)
         if 'Sentiment' in df.columns:
+            # تحويل لـ string مؤقتاً للتنظيف ثم إرجاعه
             df['Sentiment'] = df['Sentiment'].astype(str).str.strip().str.title()
-            sentiment_map = {'Positive': 'Positive', 'Pos': 'Positive', '1': 'Positive',
-                             'Negative': 'Negative', 'Neg': 'Negative', '-1': 'Negative',
-                             'Neutral': 'Neutral'}
+            sentiment_map = {
+                'Positive': 'Positive', 'Pos': 'Positive', '1': 'Positive',
+                'Negative': 'Negative', 'Neg': 'Negative', '-1': 'Negative',
+                'Neutral': 'Neutral', 'Neu': 'Neutral', '0': 'Neutral'
+            }
             df['Sentiment_Clean'] = df['Sentiment'].map(sentiment_map).fillna('Neutral')
+            # تحويل الناتج لـ category لتوفير المساحة
+            df['Sentiment_Clean'] = df['Sentiment_Clean'].astype('category')
         else:
             df['Sentiment_Clean'] = 'Neutral'
 
-        # تنظيف الأعمدة الأخرى
+        # 3. تنظيف الأعمدة الأخرى (كودك الأصلي)
         if 'المدينة' not in df.columns: df['المدينة'] = 'غير محدد'
         if 'اسم_المنشأة' not in df.columns: df['اسم_المنشأة'] = 'غير معروف'
         if 'macro_category' not in df.columns: df['macro_category'] = 'عام'
         if 'strategic_pillar' not in df.columns: df['strategic_pillar'] = 'عام'
-        if 'Date_Clean' in df.columns: df['Date_Clean'] = pd.to_datetime(df['Date_Clean'], errors='coerce')
+        
+        # تحويل التاريخ
+        if 'Date_Clean' in df.columns: 
+            df['Date_Clean'] = pd.to_datetime(df['Date_Clean'], errors='coerce')
 
-        # دمج القطاعات
+        # 4. دمج القطاعات (تحسين بسيط لضمان الدقة)
         try:
             df_cats = pd.read_excel("Saudi_CSR_Dataset.xlsx", engine='openpyxl', usecols=['نوع_النشاط', 'القطاع'])
+            # تحويل المفتاح لنص لضمان التطابق
             mapping = df_cats.drop_duplicates('نوع_النشاط').set_index('نوع_النشاط')['القطاع'].to_dict()
-            df['Main_Sector'] = df['نوع_النشاط'].map(mapping).fillna(df['نوع_النشاط'])
+            
+            # التأكد من أن عمود الدمج نصي
+            df['Main_Sector'] = df['نوع_النشاط'].astype(str).map(mapping).fillna(df['نوع_النشاط'])
+            df['Main_Sector'] = df['Main_Sector'].astype('category') # ضغط النتيجة
         except:
             df['Main_Sector'] = df['نوع_النشاط']
 
         return df
     except Exception as e:
-        st.error(f"Error: {e}")
+        st.error(f"Error loading data: {e}")
         return pd.DataFrame()
 
+# استدعاء الدالة
 df = load_data()
 if df.empty: st.stop()
 
@@ -344,6 +370,7 @@ if not net_df.empty:
         st.error(f"خطأ: {e}")
 else:
     st.info("⚠️ البيانات غير كافية.")
+
 
 
 
